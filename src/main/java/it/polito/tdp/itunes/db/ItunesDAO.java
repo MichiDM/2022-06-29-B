@@ -1,12 +1,15 @@
 package it.polito.tdp.itunes.db;
 
 import java.sql.Connection;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+
 import it.polito.tdp.itunes.model.Album;
 import it.polito.tdp.itunes.model.Artist;
 import it.polito.tdp.itunes.model.Genre;
@@ -26,7 +29,7 @@ public class ItunesDAO {
 			ResultSet res = st.executeQuery();
 
 			while (res.next()) {
-				result.add(new Album(res.getInt("AlbumId"), res.getString("Title")));
+				result.add(new Album(res.getInt("AlbumId"), res.getString("Title"), 0.0));
 			}
 			conn.close();
 		} catch (SQLException e) {
@@ -138,7 +141,35 @@ public class ItunesDAO {
 		}
 		return result;
 	}
-	
-	
+
+	public List<Album> getVertici(int n, Map<Integer, Album> idMap) {
+		
+		
+		final String sql = "SELECT t.AlbumId, SUM(t.Milliseconds) AS durata "
+				+ "FROM track t "
+				+ "GROUP BY t.AlbumId "
+				+ "HAVING SUM(t.Milliseconds) > ?";
+		List<Album> result = new LinkedList<>();
+		
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, n*1000);
+			ResultSet res = st.executeQuery();
+
+			while (res.next()) {
+				Album a =  idMap.get(res.getInt("AlbumId"));
+				a.setDurata(res.getDouble("durata"));
+				result.add(a);
+			}
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new RuntimeException("SQL Error");
+		}
+		return result;
+		
+	}
+		
 	
 }
